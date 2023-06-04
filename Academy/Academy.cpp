@@ -46,7 +46,7 @@ public:
         set_age(age);
         cout << "HConstructor:\t" << this << endl;
     }
-    virtual ~Human()
+    ~Human()
     {
         cout << "HDestructor:\t" << this << endl;
     }
@@ -197,7 +197,7 @@ public:
 void print(Human** group,const int n)
 {
     cout << delimiter << endl;
-    for (int i = 0; i < sizeof(group) / sizeof(group[0]); i++)
+    for (int i = 0; i < n; i++)
     {
         //group[i]->print();
         cout << group[i];
@@ -215,7 +215,7 @@ void save(Human** group, const int n,const char* filename)
         fout << delimiter << endl;
     }
     fout.close();
-    char command[FILENAME_MAX] = "notepad";
+    char command[FILENAME_MAX] = "notepad ";
     strcat(command, filename);
     system(command);
 }
@@ -253,6 +253,7 @@ void main()
     //Specialization
     print(group, sizeof(group) / sizeof(group[0]));
     save(group, sizeof(group) / sizeof(group[0]), "group.txt");
+
     for (int i = 0; i < sizeof(group) / sizeof(group[0]); i++)
     {
         delete group[i];
