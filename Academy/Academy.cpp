@@ -83,7 +83,7 @@ public:
     {
         return rating;
     }
-    double get_attendance()
+    double get_attendance()const
     {
         return attendance;
     }
@@ -124,6 +124,10 @@ public:
     }
 };
 
+std::ostream& operator<<(std::ostream& os, const Student& obj)
+{
+    return os << (Human&)obj << " " << obj.get_speciality() << " " << obj.get_group() << " " << obj.get_rating() << " " << obj.get_attendance();
+}
 #define Teacher_take_parameters const std::string& speciality, int experienrce
 #define Teacher_give_parameters speciality, experienrce
 class Teacher :public Human
@@ -166,6 +170,11 @@ public:
     }
 };
 
+std::ostream& operator<<(std::ostream& os, const Teacher& obj)
+{
+    return os << (Human&)obj << " " << obj.get_speciality() << " " << obj.get_experience();
+}
+
 class Graduate: public Student
 {
     std::string subject;
@@ -194,13 +203,23 @@ public:
         cout << subject << endl;
     }
 };
+
+std::ostream& operator<<(std::ostream& os, const Graduate& obj)
+{
+    return os <<(Student&)obj<<" " << obj.get_subject();
+}
+
 void print(Human** group,const int n)
 {
     cout << delimiter << endl;
-    for (int i = 0; i < sizeof(group) / sizeof(group[0]); i++)
+    for (int i = 0; i < n; i++)
     {
         //group[i]->print();
-        cout << group[i];
+        cout << typeid(*group[i]).name() << endl;
+        if (typeid(*group[i]) == typeid(Student)) cout << *dynamic_cast<Student*>(group[i]) << endl;
+        if (typeid(*group[i]) == typeid(Teacher)) cout << *dynamic_cast<Teacher*>(group[i]) << endl;
+        if (typeid(*group[i]) == typeid(Graduate)) cout << *dynamic_cast<Graduate*>(group[i]) << endl;
+        cout << *group[i]<<endl;
         cout << delimiter << endl;
     }
  }
@@ -215,7 +234,7 @@ void save(Human** group, const int n,const char* filename)
         fout << delimiter << endl;
     }
     fout.close();
-    char command[FILENAME_MAX] = "notepad";
+    char command[FILENAME_MAX] = "start notepad ";
     strcat(command, filename);
     system(command);
 }
@@ -251,9 +270,10 @@ void main()
         new Teacher("Diaz", "Ricardo", 50, "Weapons distribution",25)
     };
     //Specialization
-    print(group, sizeof(group) / sizeof(group[0]));
-    save(group, sizeof(group) / sizeof(group[0]), "group.txt");
-    for (int i = 0; i < sizeof(group) / sizeof(group[0]); i++)
+    int n = sizeof(group) / sizeof(group[0]);
+    print(group, n);
+    save(group, n, "group.txt");
+    for (int i = 0; i < n; i++)
     {
         delete group[i];
     }
