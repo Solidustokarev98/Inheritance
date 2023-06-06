@@ -6,10 +6,21 @@ using namespace std;
 
 #define tab "\t"
 #define delimiter "\n--------------------------------\n"
-#define human_take_parameters const std::string& last_name, const std::string& first_name, int age
-#define human_give_parameters last_name, first_name, age
+#define HUMAN_TAKE_PARAMETERS const std::string& last_name, const std::string& first_name, int age
+#define HUMAN_GIVE_PARAMETERS last_name, first_name, age
 class Human
 {
+    //Статические переменные и константы принадлежат классу, а не объектам, и соответственно,
+    //Занимают память в классе, а не в объектах. 
+    //Статические члены являются общими для всех объектов класса, 
+    //все объекты имеют равноправный доступ к статическим полям.
+    static const int LAST_NAME_WIDTH = 15;
+    static const int FIRST_NAME_WIDTH = 10;
+    //В классе можно проинициализировать статическую, ТОЛЬКО КОНСТАНТУ И ТОЛЬКО ТИПА 'int'
+    //Все остальные статические переменные и константы МОГУТ БЫТЬ ПРОИНИЦИАЛИЗИРОВАНЫ ТОЛЬКО ЗА КЛАССОМ
+    ///--------------------------------------------------------------------------///
+    //Нестатические переменные и константы принадлежат своим объектам, и следовательно хранятся,
+    //и занимают память в объектах.
     std::string last_name;
     std::string first_name;
     int age;
@@ -39,7 +50,7 @@ public:
         this->age = age;
     }
         //Constructors
-    Human(human_take_parameters)
+    Human(HUMAN_TAKE_PARAMETERS)
     {
         set_last_name(last_name);
         set_first_name(first_name);
@@ -51,21 +62,51 @@ public:
         cout << "HDestructor:\t" << this << endl;
     }
 
-    virtual void print()const
+    virtual std::ostream& print(std::ostream& os)const
     {
-        cout << last_name << " " << first_name << " " << age << " y/o"<<endl;
+        return os << last_name << " " << first_name << " " << age << " y/o";
     }
-
+    virtual ofstream& print(std::ofstream& ofs)const
+    {
+        ofs.width(LAST_NAME_WIDTH);
+        ofs << std::left;
+        ofs << last_name;
+        ofs.width(FIRST_NAME_WIDTH);
+        ofs << first_name;
+        ofs.width(3);
+        ofs<< age;
+        return ofs;
+    }
+    virtual std::ifstream& scan(std::ifstream& ifs)
+    {
+        ifs >> last_name >> first_name >> age;
+        return ifs;
+    }
 };
+
 std::ostream& operator<<(std::ostream & os, const Human & obj)
 {
-    return os << obj.get_last_name() << " " << obj.get_first_name() << " " << obj.get_age();
+    return obj.print(os);
 }
 
-#define student_take_parameters const std::string& speciality, const std::string& group, double rating, double attendance
-#define student_give_parameters speciality, group, rating, attendance
+std::ofstream& operator<<(std::ofstream & ofs, const Human& obj)
+{
+    obj.print(ofs);
+    return ofs;
+}
+
+std::ifstream& operator>>(std::ifstream& ifs, Human& obj)
+{
+    return obj.scan(ifs);
+}
+#define STUDENT_TAKE_PARAMETERS const std::string& speciality, const std::string& group, double rating, double attendance
+#define STUDENT_GIVE_PARAMETERS speciality, group, rating, attendance
 class Student :public Human
 {
+    static const int SPECIALITY_WIDTH = 22;
+    static const int GROUP_WIDTH = 8;
+    static const int RATING_WIDTH = 8;
+    static const int ATTENDANCE_WIDTH = 8;
     std::string speciality;
     std::string group;
     double rating;
@@ -104,7 +145,7 @@ public:
         this->attendance=attendance;
     }
     //Constructors
-    Student(human_take_parameters, student_take_parameters):Human(human_give_parameters)
+    Student(HUMAN_TAKE_PARAMETERS, STUDENT_TAKE_PARAMETERS):Human(HUMAN_GIVE_PARAMETERS)
     {
         set_speciality(speciality);
         set_group(group);
@@ -117,19 +158,51 @@ public:
         cout << "SDestructor:\t" << this << endl;
     }
 
-    void print()const
+    std::ostream& print(std::ostream& os)const
     {
-        Human::print();
-        cout << speciality << ", " << group << " " << rating << " " << attendance<< endl;
+        return Human::print(os)<< " " << speciality << ", " << group << " " << rating << " " << attendance;
+    }
+    std::ofstream& print(std::ofstream& ofs)const
+    {
+        Human::print(ofs);
+        ofs.width(SPECIALITY_WIDTH);
+        ofs << speciality;
+        ofs.width(GROUP_WIDTH);
+        ofs << group;
+        ofs.width(RATING_WIDTH);
+        ofs << rating;
+        ofs.width(ATTENDANCE_WIDTH);
+        ofs << attendance;
+        return ofs;
+    }
+    std::ifstream& scan(std::ifstream& ifs)
+    {
+        Human::scan(ifs);
+        char buffer[SPECIALITY_WIDTH+1] = {};
+        ifs.read(buffer, SPECIALITY_WIDTH);
+        for (int i = strlen(buffer) - 1; buffer[i] == ' '; i--)buffer[i] = 0;
+        while (buffer[0]==' ')
+        {
+            for (int i = 0; buffer[i]; i++) 
+            {
+                buffer[i] = buffer[i + 1];
+            }
+        }
+        speciality = buffer;
+        ifs >> group;
+        ifs >> rating >> attendance;
+        return ifs;
     }
 };
 
-#define Teacher_take_parameters const std::string& speciality, int experienrce
-#define Teacher_give_parameters speciality, experienrce
+#define TEACHER_TAKE_PARAMETERS const std::string& speciality, int experience
+#define TEACHER_GIVE_PARAMETERS speciality, experience
 class Teacher :public Human
 {
+    static const int SPECIALITY_WIDTH = 22;
+    static const int EXPERIENCE_WIDTH = 3;
     std::string speciality;
-    int experienrce;
+    int experience;
 public:
     const std::string& get_speciality()const
     {
@@ -137,21 +210,21 @@ public:
     }
     int get_experience()const
     {
-        return experienrce;
+        return experience;
     }
     void set_speciality(const std::string& speciality)
     {
         this->speciality = speciality;
     }
-    void set_experience(int experienrce)
+    void set_experience(int experience)
     {
-        this->experienrce= experienrce;
+        this->experience= experience;
     }
     //Constructors
-    Teacher(human_take_parameters,Teacher_take_parameters):Human(human_give_parameters)
+    Teacher(HUMAN_TAKE_PARAMETERS,TEACHER_TAKE_PARAMETERS):Human(HUMAN_GIVE_PARAMETERS)
     {
         set_speciality(speciality);
-        set_experience(experienrce);
+        set_experience(experience);
         cout << "TConstructor:\t" << this << endl;
     }
     ~Teacher()
@@ -159,10 +232,27 @@ public:
         cout << "TDestructor:\t" << this << endl;
     }
 
-    void print()const
+    std::ostream&  print(std::ostream& os)const
     {
-        Human::print();
-        cout << speciality << " " << experienrce << endl;
+        return Human::print(os) <<" " << speciality << " " << experience;
+    }
+    std::ofstream&  print(std::ofstream& ofs)const
+    {
+        Human::print(ofs);
+        ofs.width(SPECIALITY_WIDTH);
+        ofs << speciality;
+        ofs.width(EXPERIENCE_WIDTH);
+        ofs << experience;
+        return ofs;
+    }
+    std::ifstream& scan(std::ifstream& ifs)
+    {
+        Human::scan(ifs);
+        char buffer[SPECIALITY_WIDTH+1] = {};
+        ifs.read(buffer, SPECIALITY_WIDTH);
+        speciality = buffer;
+        ifs >> experience;
+        return ifs;
     }
 };
 
@@ -179,7 +269,7 @@ public:
         this->subject = subject;
     }
     //Constructors
-    Graduate(human_take_parameters,student_take_parameters,const std::string& subject):Student(human_give_parameters,student_give_parameters)
+    Graduate(HUMAN_TAKE_PARAMETERS,STUDENT_TAKE_PARAMETERS,const std::string& subject):Student(HUMAN_GIVE_PARAMETERS,STUDENT_GIVE_PARAMETERS)
     {
         this->subject = subject;
         cout << "GConstructor:\t" << this << endl;
@@ -188,10 +278,21 @@ public:
     {
         cout << "GDestructor:\t" << this << endl;
     }
-    void print()const
+    std::ostream& print(std::ostream& os)const
     {
-        Student::print();
-        cout << subject << endl;
+        return Student::print(os) << " " << subject;
+    }
+    std::ofstream& print(std::ofstream& ofs)const
+    {
+        Student::print(ofs);
+        ofs << subject;
+        return ofs;
+    }
+    std::ifstream& scan(std::ifstream& ifs)
+    {
+        Student::scan(ifs);
+        std::getline(ifs, subject);
+        return ifs;
     }
 };
 void print(Human** group,const int n)
@@ -208,20 +309,61 @@ void print(Human** group,const int n)
 void save(Human** group, const int n,const char* filename)
 {
     ofstream fout(filename);
-    fout << delimiter << endl;
     for (int i = 0; i < n; i++)
     {
+        fout << typeid(*group[i]).name() << ":\t";
         fout << *group[i] << endl;
-        fout << delimiter << endl;
     }
     fout.close();
     char command[FILENAME_MAX] = "notepad ";
     strcat(command, filename);
     system(command);
 }
-
+Human* HumanFactory(const std::string& type)
+{
+    if (type.find("Student") != std::string::npos) return new Student("", "", 0, "", "", 0, 0);
+    if (type.find("Graduate") != std::string::npos) return new Graduate("", "", 0, "", "", 0, 0,"");
+    if (type.find("Teacher") != std::string::npos) return new Teacher("", "", 0, "",0);
+}
+Human** load(const std::string& filename, int& n)
+{
+    std::ifstream fin(filename);
+    n = 0;
+    Human** group = nullptr;
+    if (fin.is_open())
+    {
+        //TODO: read file
+        //1) Определяем количество участников группы:
+        std::string buffer;
+        for (n = 0; !fin.eof(); n++)
+        {
+            std::getline(fin, buffer);
+            if (buffer.empty())n--;
+        }
+        //2) Выделяем память:
+        group = new Human * [n] {};
+        //3) Возвращаемся в начало файла:
+        fin.clear();
+        fin.seekg(0);
+        //4) Загружаем участников группы из файла в выделенную память:
+        for (int i = 0; i < n; i++)
+        {
+            std::getline(fin, buffer, ':');
+            group[i] = HumanFactory(buffer);
+            fin.ignore();
+            fin >> *group[i];
+        }
+        fin.close();
+    }
+    else
+    {
+        cout << "Error: file not found" << endl;
+    }
+    return group;
+}
 //#define INHERITANCE_CHECK
-#define POLYMORPHISM
+//#define POLYMORPHISM
+#define LOAD_FROM_FILE
 void main()
 {
     setlocale(LC_ALL, "");
@@ -248,7 +390,8 @@ void main()
         new Teacher("White", "Walter", 50, "Chemistry", 20),
         new Graduate("Schreder", "Hank", 40, "Criminalistic", "OBN", 90, 70, "How to catch Heizenberg"),
         new Student("Vercetty", "Tomas", 30, "Theft", "Vice", 98,99),
-        new Teacher("Diaz", "Ricardo", 50, "Weapons distribution",25)
+        new Teacher("Diaz", "Ricardo", 50, "Weapons distribution",25),
+        new Graduate("Rosenberg", "Ken", 27, "Layer","Vice", 75,20,"Get moneybag")
     };
     //Specialization
     print(group, sizeof(group) / sizeof(group[0]));
@@ -259,4 +402,17 @@ void main()
         delete group[i];
     }
 #endif // POLYMORPHISM
+
+#ifdef LOAD_FROM_FILE
+    int n=0;      //Размер группы
+    Human** group = load("group.txt", n);
+    print(group,n);
+    for (int i = 0; i < n; i++)
+    {
+        delete group[i];
+    }
+    delete[] group;
+    group = nullptr;
+#endif // LOAD_FROM_FILE
+
 }
