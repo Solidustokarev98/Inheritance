@@ -88,17 +88,16 @@ std::ostream& operator<<(std::ostream & os, const Human & obj)
 {
     return obj.print(os);
 }
-
 std::ofstream& operator<<(std::ofstream & ofs, const Human& obj)
 {
     obj.print(ofs);
     return ofs;
 }
-
 std::ifstream& operator>>(std::ifstream& ifs, Human& obj)
 {
     return obj.scan(ifs);
 }
+
 #define STUDENT_TAKE_PARAMETERS const std::string& speciality, const std::string& group, double rating, double attendance
 #define STUDENT_GIVE_PARAMETERS speciality, group, rating, attendance
 class Student :public Human
@@ -295,13 +294,14 @@ public:
         return ifs;
     }
 };
+
 void print(Human** group,const int n)
 {
     cout << delimiter << endl;
     for (int i = 0; i < n; i++)
     {
         //group[i]->print();
-        cout << group[i];
+        cout << *group[i];
         cout << delimiter << endl;
     }
  }
@@ -361,6 +361,7 @@ Human** load(const std::string& filename, int& n)
     }
     return group;
 }
+
 //#define INHERITANCE_CHECK
 //#define POLYMORPHISM
 #define LOAD_FROM_FILE
