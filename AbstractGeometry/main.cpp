@@ -29,6 +29,7 @@ namespace Geometry
 	};
 #define SHAPE_TAKE_PARAMETERS Color color, int start_x, int start_y, int line_width=5
 #define SHAPE_GIVE_PARAMETERS color, start_x, start_y, line_width
+
 	class Figure
 	{
 	protected:
@@ -87,12 +88,30 @@ namespace Geometry
 
 		virtual double get_area()const = 0;
 		virtual double get_perimeter()const = 0;
-		virtual void draw()const = 0;
+		virtual void draw(BOOL(*drawMethod)(HDC, int, int, int, int), double firstParam, double secondParam, int line_width, Color color) const
+		{
+			HWND hwnd = GetConsoleWindow();
+			HDC hdc = GetDC(hwnd);
+			HPEN hPen = CreatePen(PS_SOLID, line_width, color);
+			HBRUSH hBrush = CreateSolidBrush(color);
+			::SelectObject(hdc, hPen);
+			::SelectObject(hdc, hBrush);
+			drawMethod
+			(
+				hdc,
+				get_start_x(),
+				get_start_y(),
+				get_start_x() + firstParam,
+				get_start_y() + secondParam
+			);
+			::DeleteObject(hPen);
+			::DeleteObject(hBrush);
+			::ReleaseDC(hwnd, hdc);
+		}
 		virtual void info()const
 		{
 			cout << "Площадь фигуры: " << get_area() << endl;
 			cout << "Периметр фигуры: " << get_perimeter() << endl;
-			draw();
 		}
 	};
 
@@ -185,37 +204,6 @@ namespace Geometry
 			return sqrt(width * length * 2);
 		}
 
-		void draw()const
-		{
-			//WinGDI - Windows Graphics Device Interface
-			//1) Получаем обработчик окна консоли:
-			HWND hwnd = GetConsoleWindow();
-			
-			//2) Получаем контекст устройства для окна консоли:
-			HDC hdc = GetDC(hwnd);	//Контекст устройства - это то, на чем мы будем рисовать
-			//Теперь нужно определиться с тем, чем мы будем рисовать
-			
-			//3) Создаем карандаш. Карандаш рисует контур фигуры
-			HPEN hPen = CreatePen(PS_SOLID, 5, color);	//PS_SOLID - сплошная линия
-																//5 - толщина линии
-			//4) Создаем кисть. Кисть выполняет заливку фигуры:
-			HBRUSH hBrush = CreateSolidBrush(color);
-
-			//5) Перед рисованием нужно выбрать чем, и на чем мы будем рисовать
-			SelectObject(hdc, hPen);
-			SelectObject(hdc, hBrush);
-
-			//6) Когда все объекты созданы и выбраны, можно рисовать нужную нам фигуру,
-			// при помощи соответствующей функции:
-			::Rectangle(hdc, start_x, start_y, start_x+width, start_y+length);
-
-			//7) Кисть и карандаш так же занимают ресурсы, поэтому их тоже нужно удалить:
-			DeleteObject(hPen);
-			DeleteObject(hBrush);			
-			
-			//8)Освобождаем контекст устройства:
-			ReleaseDC(hwnd, hdc);
-		}
 		void info()const
 		{
 			cout << typeid(*this).name() << endl;
@@ -223,6 +211,7 @@ namespace Geometry
 			cout << "Длина: " << get_length() << endl;
 			cout << "Диагональ: " << get_diagonal() << endl;
 			Figure::info();
+			Figure::draw(::Rectangle, width, length, line_width, color);
 		}
 	};
 
@@ -264,31 +253,14 @@ namespace Geometry
 		{
 			return M_PI * radius * radius;
 		}
-		
-		void draw()const
-		{
-			HWND hwnd = GetConsoleWindow();
-			HDC hdc = GetDC(hwnd);
-
-			HPEN hPen = CreatePen(PS_SOLID, line_width, color);
-			HBRUSH hBrush = CreateSolidBrush(color);
-
-			SelectObject(hdc, hPen);
-			SelectObject(hdc, hBrush);
-
-			::Ellipse(hdc, start_x, start_y, start_x+get_diameter(), start_y+get_diameter());
-
-			DeleteObject(hPen);
-			DeleteObject(hBrush);
-						
-			ReleaseDC(hwnd, hdc);
-		}
+				
 		void info()const
 		{
 			cout << typeid(*this).name() << endl;
 			cout << "Радиус: " << get_radius() << endl;
 			cout << "Диаметр: " << get_diameter() << endl;
 			Figure::info();
+			Figure::draw(::Ellipse, get_diameter(), get_diameter(), line_width, color);
 		}
 	};
 
@@ -298,6 +270,23 @@ namespace Geometry
 		Triangle(SHAPE_TAKE_PARAMETERS):Figure(SHAPE_GIVE_PARAMETERS){}
 		~Triangle(){}
 		virtual double get_height()const = 0;
+		virtual void draw(BOOL(*drawMethod)(HDC, const POINT*, int), double firstParam, double secondParam, double thirdParam, int line_width, Color color) const
+		{
+			HWND hwnd = GetConsoleWindow();
+			HDC hdc = GetDC(hwnd);
+			HPEN hPen = CreatePen(PS_SOLID, line_width, color);
+			HBRUSH hBrush = CreateSolidBrush(color);
+			SelectObject(hdc, hPen);
+			SelectObject(hdc, hBrush);
+			POINT vertices[] = {
+				{get_start_x(), get_start_y() + firstParam},
+				{get_start_x() + secondParam, get_start_y() + firstParam},
+				{get_start_x() + secondParam / 2 , get_start_y() + firstParam - thirdParam} };
+			drawMethod(hdc, vertices, 3);
+			DeleteObject(hPen);
+			DeleteObject(hBrush);
+			ReleaseDC(hwnd, hdc);
+		}
 		void info()const
 		{
 			cout << "Высота треугольника: " << get_height() << endl;
@@ -337,36 +326,13 @@ namespace Geometry
 		{
 			return 0.5* side * get_height();
 		}
-		void draw()const
-		{
-			HWND hwnd = GetConsoleWindow();
-			HDC hdc = GetDC(hwnd);
-
-			HPEN hPen = CreatePen(PS_SOLID, line_width, color);
-			HBRUSH hBrush = CreateSolidBrush(color);
-
-			SelectObject(hdc, hPen);
-			SelectObject(hdc, hBrush);
-
-			POINT vertex[] =
-			{
-				{ start_x, start_y + side },
-				{ start_x + side, start_y + side },
-				{ start_x + side / 2, start_y + side - get_height()},
-			};
-
-			::Polygon(hdc, vertex, 3);
-
-			DeleteObject(hPen);
-			DeleteObject(hBrush);
-
-			ReleaseDC(hwnd, hdc);
-		}
+	
 		void info()const
 		{
 			cout << typeid(*this).name() << endl;
 			cout << "Длина стороны: " << get_side() << endl;
 			Triangle::info();
+			Triangle::draw(::Polygon, side, side, get_height(), line_width, color);
 		}
 	};
 	//Равнобедренный треугольник
@@ -414,37 +380,14 @@ namespace Geometry
 		{
 			return base * get_height() / 2;
 		}
-		void draw()const
-		{
-			HWND hwnd = GetConsoleWindow();
-			HDC hdc = GetDC(hwnd);
-
-			HPEN hPen = CreatePen(PS_SOLID, line_width, color);
-			HBRUSH hBrush = CreateSolidBrush(color);
-
-			SelectObject(hdc, hPen);
-			SelectObject(hdc, hBrush);
-
-			POINT vertex[] =
-			{
-				{ start_x, start_y + side },
-				{ start_x + base, start_y + side },
-				{ start_x + base / 2, start_y + side - get_height()}
-			};
-
-			::Polygon(hdc, vertex, 3);
-
-			DeleteObject(hPen);
-			DeleteObject(hBrush);
-
-			ReleaseDC(hwnd, hdc);
-		}
+		
 		void info()const
 		{
 			cout << typeid(*this).name() << endl;
 			cout << "Основание: " << get_base() << endl;
 			cout << "Сторона: " << get_side() << endl;
 			Triangle::info();
+			Triangle::draw(::Polygon, side, base, get_height(), line_width, color);
 		}	
 	};
 }
